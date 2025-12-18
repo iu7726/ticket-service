@@ -1,7 +1,5 @@
 # 🎫 Ticketing: High-Performance Concurrency Control System
 
-> **"10만 명의 동시 접속, 단 100개의 재고. 서버는 무너지지 않고 데이터는 정확해야 합니다."**
-
 **Ticketing**은 대규모 트래픽이 몰리는 선착순 이벤트를 가정한 고성능 백엔드 시스템입니다.  
 단순한 CRUD를 넘어, **Redis Lua Script를 활용한 원자적(Atomic) 제어**와 **대기열 시스템**을 통해 Race Condition(경쟁 상태)과 Over-selling(재고 초과 판매) 문제를 원천 차단하는 데 초점을 맞췄습니다.
 
@@ -69,7 +67,7 @@ DB_USERNAME=admin
 DB_PASSWORD=root
 DB_DATABASE=traffic_buster
 
-# Redis (v7.2)
+# Redis (v7.4)
 REDIS_HOST=localhost
 REDIS_PORT=6379
 ```
