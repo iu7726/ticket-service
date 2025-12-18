@@ -68,7 +68,6 @@ DB_PORT=3306
 DB_USERNAME=admin
 DB_PASSWORD=root
 DB_DATABASE=traffic_buster
-DB_SYNC=true
 
 # Redis (v7.2)
 REDIS_HOST=localhost

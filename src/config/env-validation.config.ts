@@ -13,7 +13,6 @@ export const envValidationSchema = Joi.object({
   DB_USERNAME: Joi.string().required(),
   DB_PASSWORD: Joi.string().required(),
   DB_DATABASE: Joi.string().required(),
-  DB_SYNC: Joi.boolean().default(false), // 실수 방지를 위해 기본값 false
 
   // REDIS
   REDIS_HOST: Joi.string().required(),
@@ -31,7 +30,6 @@ export interface EnvValidationSchema {
   DB_USERNAME: string;
   DB_PASSWORD: string;
   DB_DATABASE: string;
-  DB_SYNC: boolean;
 
   // REDIS
   REDIS_HOST: string;

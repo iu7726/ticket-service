@@ -6,6 +6,8 @@ import { envValidationSchema } from './config/env-validation.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from './redis/redis.module';
 import { TypeOrmConfigService } from './config/typeorm.config';
+import { UserModule } from './service/user/user.module';
+import { ProductModule } from './service/product/product.module';
 
 @Module({
   imports: [
@@ -20,7 +22,12 @@ import { TypeOrmConfigService } from './config/typeorm.config';
       useClass: TypeOrmConfigService,
     }),
 
-    RedisModule
+    RedisModule,
+
+    // service modules
+    UserModule,
+
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [AppService],
