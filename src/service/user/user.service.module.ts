@@ -6,4 +6,4 @@ import { User } from 'src/common/entities/user.entity';
   imports: [TypeOrmModule.forFeature([User])],
   exports: [TypeOrmModule],
 })
-export class UserModule {}
+export class UserServiceModule {}

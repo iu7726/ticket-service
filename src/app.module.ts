@@ -6,9 +6,10 @@ import { envValidationSchema } from './config/env-validation.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from './redis/redis.module';
 import { TypeOrmConfigService } from './config/typeorm.config';
-import { UserModule } from './service/user/user.module';
-import { ProductModule } from './service/product/product.module';
-import { OrderModule } from './service/order/order.module';
+import { UserServiceModule } from './service/user/user.service.module';
+import { ProductServiceModule } from './service/product/product.service.module';
+import { OrderServiceModule } from './service/order/order.service.module';
+import { PurchaseModule } from './domain/purchase/purchase.module';
 
 @Module({
   imports: [
@@ -25,10 +26,13 @@ import { OrderModule } from './service/order/order.module';
 
     RedisModule,
 
+    //domain
+    PurchaseModule,
+
     // service modules
-    UserModule,
-    ProductModule,
-    OrderModule,
+    UserServiceModule,
+    ProductServiceModule,
+    OrderServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
