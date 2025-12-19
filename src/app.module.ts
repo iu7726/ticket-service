@@ -8,6 +8,7 @@ import { RedisModule } from './redis/redis.module';
 import { TypeOrmConfigService } from './config/typeorm.config';
 import { UserModule } from './service/user/user.module';
 import { ProductModule } from './service/product/product.module';
+import { OrderModule } from './service/order/order.module';
 
 @Module({
   imports: [
@@ -26,8 +27,8 @@ import { ProductModule } from './service/product/product.module';
 
     // service modules
     UserModule,
-
     ProductModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
