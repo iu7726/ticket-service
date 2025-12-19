@@ -10,6 +10,7 @@ import { UserServiceModule } from './service/user/user.service.module';
 import { ProductServiceModule } from './service/product/product.service.module';
 import { OrderServiceModule } from './service/order/order.service.module';
 import { PurchaseModule } from './domain/purchase/purchase.module';
+import { AdminModule } from './domain/admin/admin.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PurchaseModule } from './domain/purchase/purchase.module';
 
     //domain
     PurchaseModule,
+    AdminModule,
 
     // service modules
     UserServiceModule,
