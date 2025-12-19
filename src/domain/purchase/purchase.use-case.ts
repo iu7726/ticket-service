@@ -1,4 +1,4 @@
-import { Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -29,13 +29,13 @@ export class PurchaseUseCase implements OnModuleInit {
     const stockKey = `product:${productId}:stock`;
     const reservationKey = `reservation:product:${productId}:user:${userId}`;
     const ttl = 300; // 5분
+    const token = uuidv4();
 
-    const result = await this.redis.eval(this.purchaseScript, 2, stockKey, reservationKey, ttl.toString());
+    const result = await this.redis.eval(this.purchaseScript, 2, stockKey, reservationKey, ttl.toString(), token);
 
     if (result === -1) throw new Error('재고 없음');
     if (result === -2) throw new Error('이미 예약 잡으셨습니다.');
 
-    const token = uuidv4();
     this.logger.log(`User ${userId} reserved Product ${productId} with Token ${token}`);
 
     return {
@@ -51,6 +51,9 @@ export class PurchaseUseCase implements OnModuleInit {
     
     const exists = await this.redis.exists(reservationKey);
     if (!exists) throw new Error('예약 정보 없음');
+
+    const savedToken = await this.redis.get(reservationKey);
+    if (savedToken !== token) throw new BadRequestException('유효하지 않은 토큰입니다.');
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();

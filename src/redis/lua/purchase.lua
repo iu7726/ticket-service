@@ -5,6 +5,7 @@
 local stockKey = KEYS[1]
 local reservationKey = KEYS[2]
 local ttl = tonumber(ARGV[1])
+local token = ARGV[2]
 
 -- 예약 체크(중복 재고 선점 방지)
 if redis.call('EXISTS', reservationKey) == 1 then
@@ -20,6 +21,6 @@ end
 
 -- 재고 차감
 redis.call('DECR', stockKey)
-redis.call('SETEX', reservationKey, ttl, 'PENDING') -- 5분 뒤 자동 폭파
+redis.call('SETEX', reservationKey, ttl, token) -- 5분 뒤 자동 폭파
 
 return 1 -- "예약 성공"
