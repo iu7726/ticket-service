@@ -11,6 +11,8 @@ import { ProductServiceModule } from './service/product/product.service.module';
 import { OrderServiceModule } from './service/order/order.service.module';
 import { PurchaseModule } from './domain/purchase/purchase.module';
 import { AdminModule } from './domain/admin/admin.module';
+import { BullModule } from '@nestjs/bullmq';
+import { BullMQConfigService } from './config/bullMQ.config';
 
 @Module({
   imports: [
@@ -23,6 +25,10 @@ import { AdminModule } from './domain/admin/admin.module';
     // MySQL 연결 (TypeORM)
     TypeOrmModule.forRootAsync({
       useClass: TypeOrmConfigService,
+    }),
+
+    BullModule.forRootAsync({
+      useClass: BullMQConfigService,
     }),
 
     RedisModule,

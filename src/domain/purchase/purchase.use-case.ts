@@ -6,6 +6,8 @@ import { DataSource } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { OrderService } from 'src/service/order/order.service';
 import { ProductService } from 'src/service/product/product.service';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 
 @Injectable()
 export class PurchaseUseCase implements OnModuleInit {
@@ -16,7 +18,8 @@ export class PurchaseUseCase implements OnModuleInit {
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     private readonly dataSource: DataSource,
     private readonly orderService: OrderService,
-    private readonly productService: ProductService
+    private readonly productService: ProductService,
+    @InjectQueue('stock-queue') private stockQueue: Queue
   ) {}
 
   async onModuleInit() {
@@ -28,13 +31,26 @@ export class PurchaseUseCase implements OnModuleInit {
   async reserve(userId: number, productId: number) {
     const stockKey = `product:${productId}:stock`;
     const reservationKey = `reservation:product:${productId}:user:${userId}`;
-    const ttl = 300; // 5분
+    const ttl = 600; // 10분 - 실제 결제 시간은 5분
     const token = uuidv4();
 
     const result = await this.redis.eval(this.purchaseScript, 2, stockKey, reservationKey, ttl.toString(), token);
 
     if (result === -1) throw new Error('재고 없음');
     if (result === -2) throw new Error('이미 예약 잡으셨습니다.');
+
+    await this.stockQueue.add(
+      'check-expiration', // 작업 이름
+      { 
+        userId, 
+        productId, 
+        reservationKey 
+      }, // 데이터
+      { 
+        delay: 5 * 60 * 1000, // 5분 지연 (300000ms)
+        removeOnComplete: true, // 성공하면 로그 삭제 (Redis 용량 관리)
+      }
+    );
 
     this.logger.log(`User ${userId} reserved Product ${productId} with Token ${token}`);
 

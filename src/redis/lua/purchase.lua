@@ -21,6 +21,6 @@ end
 
 -- 재고 차감
 redis.call('DECR', stockKey)
-redis.call('SETEX', reservationKey, ttl, token) -- 5분 뒤 자동 폭파
+redis.call('SETEX', reservationKey, ttl, token) -- 10분 뒤 자동 폭파
 
 return 1 -- "예약 성공"
