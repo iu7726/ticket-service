@@ -84,13 +84,13 @@ export class PurchaseUseCase implements OnModuleInit {
         totalPrice: 150000,
       }, queryRunner.manager)  
 
-      // 키 삭제
-      await this.redis.del(reservationKey);
-
       // 재고 차감
       await this.productService.decrementStock(productId, 1, queryRunner.manager);
       
       await queryRunner.commitTransaction();
+
+      // 키 삭제
+      await this.redis.del(reservationKey);
       this.logger.log(`User ${userId} confirmed Product ${productId}, Order ID: ${order.id}`);
       
       return {

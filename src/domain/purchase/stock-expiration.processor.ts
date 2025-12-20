@@ -1,17 +1,23 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { Inject } from '@nestjs/common';
+import { Inject, OnModuleInit } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { Logger } from '@nestjs/common';
 import * as path from 'path';
 import * as fs from 'fs';
 
 @Processor('stock-queue')
-export class StockExpirationProcessor extends WorkerHost {
+export class StockExpirationProcessor extends WorkerHost implements OnModuleInit  {
   private readonly logger = new Logger(StockExpirationProcessor.name);
+  private restoreStockScript: string;
 
   constructor(@Inject('REDIS_CLIENT') private readonly redis: Redis) {
     super();
+  }
+
+  onModuleInit() {
+    const scriptPath = path.join(process.cwd(), 'src/redis/lua/restoreStock.lua');
+    this.restoreStockScript = fs.readFileSync(scriptPath, 'utf8');
   }
 
   async process(job: Job) {
@@ -28,10 +34,7 @@ export class StockExpirationProcessor extends WorkerHost {
       
       const stockKey = `product:${productId}:stock`;
 
-      const scriptPath = path.join(process.cwd(), 'src/redis/lua/restoreStock.lua');
-      const script = fs.readFileSync(scriptPath, 'utf8');
-
-      await this.redis.eval(script, 2, stockKey, reservationKey);
+      await this.redis.eval(this.restoreStockScript, 2, stockKey, reservationKey);
 
       this.logger.warn(`♻️ Expired! Stock restored for Product ${productId}`);
     } else {
