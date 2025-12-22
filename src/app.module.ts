@@ -14,6 +14,8 @@ import { AdminModule } from './domain/admin/admin.module';
 import { BullModule } from '@nestjs/bullmq';
 import { BullMQConfigService } from './config/bullMQ.config';
 import { QueueModule } from './service/queue/queue.module';
+import { HealthServiceModule } from './service/health/health.module';
+import { HealthModule } from './domain/health/health.module';
 
 @Module({
   imports: [
@@ -36,6 +38,7 @@ import { QueueModule } from './service/queue/queue.module';
 
     //domain
     PurchaseModule,
+    HealthModule,
     AdminModule,
 
     // service modules
@@ -43,6 +46,7 @@ import { QueueModule } from './service/queue/queue.module';
     ProductServiceModule,
     OrderServiceModule,
     QueueModule,
+    HealthServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

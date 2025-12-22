@@ -101,7 +101,6 @@ describe('PurchaseUseCase', () => {
   });
 
   // confirm() 메서드 테스트 그룹
-  // 트랜잭션 관리와 토큰 검증 로직이 핵심입니다.
   describe('confirm', () => {
     const token = 'valid-uuid-token';
     const userId = 1;
@@ -109,7 +108,6 @@ describe('PurchaseUseCase', () => {
     const reservationKey = `reservation:product:${productId}:user:${userId}`;
 
     it('should confirm purchase successfully', async () => {
-      // Redis에 예약 키가 존재하고, 저장된 토큰이 요청받은 토큰과 일치한다고 가정
       redis.exists.mockResolvedValue(1);
       redis.get.mockResolvedValue(token);
       orderService.createOrder.mockResolvedValue({ id: 100 });
@@ -135,6 +133,7 @@ describe('PurchaseUseCase', () => {
         quantity: 1,
         totalPrice: 150000,
       });
+      expect(mockQueryRunner.release).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException for invalid token', async () => {
