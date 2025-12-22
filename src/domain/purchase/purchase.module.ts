@@ -3,16 +3,14 @@ import { PurchaseUseCase } from './purchase.use-case';
 import { PurchaseController } from './purchase.controller';
 import { OrderServiceModule } from 'src/service/order/order.service.module';
 import { ProductServiceModule } from 'src/service/product/product.service.module';
-import { BullModule } from '@nestjs/bullmq';
 import { StockExpirationProcessor } from './stock-expiration.processor';
+import { QueueModule } from 'src/service/queue/queue.module';
 
 @Module({
   imports: [
     OrderServiceModule, 
     ProductServiceModule,
-    BullModule.registerQueue({
-      name: 'stock-queue',
-    }),
+    QueueModule
   ],
   controllers: [PurchaseController],
   providers: [PurchaseUseCase, StockExpirationProcessor],

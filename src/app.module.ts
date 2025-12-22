@@ -13,6 +13,7 @@ import { PurchaseModule } from './domain/purchase/purchase.module';
 import { AdminModule } from './domain/admin/admin.module';
 import { BullModule } from '@nestjs/bullmq';
 import { BullMQConfigService } from './config/bullMQ.config';
+import { QueueModule } from './service/queue/queue.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { BullMQConfigService } from './config/bullMQ.config';
     UserServiceModule,
     ProductServiceModule,
     OrderServiceModule,
+    QueueModule,
   ],
   controllers: [AppController],
   providers: [AppService],

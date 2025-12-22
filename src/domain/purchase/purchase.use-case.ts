@@ -6,8 +6,7 @@ import { DataSource } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { OrderService } from 'src/service/order/order.service';
 import { ProductService } from 'src/service/product/product.service';
-import { Queue } from 'bullmq';
-import { InjectQueue } from '@nestjs/bullmq';
+import { StockQueueService } from 'src/service/queue/stock-queue.service';
 
 @Injectable()
 export class PurchaseUseCase implements OnModuleInit {
@@ -19,7 +18,7 @@ export class PurchaseUseCase implements OnModuleInit {
     private readonly dataSource: DataSource,
     private readonly orderService: OrderService,
     private readonly productService: ProductService,
-    @InjectQueue('stock-queue') private stockQueue: Queue
+    private readonly stockQueueService: StockQueueService
   ) {}
 
   async onModuleInit() {
@@ -39,18 +38,7 @@ export class PurchaseUseCase implements OnModuleInit {
     if (result === -1) throw new Error('재고 없음');
     if (result === -2) throw new Error('이미 예약 잡으셨습니다.');
 
-    await this.stockQueue.add(
-      'check-expiration', // 작업 이름
-      { 
-        userId, 
-        productId, 
-        reservationKey 
-      }, // 데이터
-      { 
-        delay: 5 * 60 * 1000, // 5분 지연 (300000ms)
-        removeOnComplete: true, // 성공하면 로그 삭제 (Redis 용량 관리)
-      }
-    );
+    await this.stockQueueService.addJob(userId, productId, stockKey, reservationKey);
 
     this.logger.log(`User ${userId} reserved Product ${productId} with Token ${token}`);
 
