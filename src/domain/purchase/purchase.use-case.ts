@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -35,8 +35,8 @@ export class PurchaseUseCase implements OnModuleInit {
 
     const result = await this.redis.eval(this.purchaseScript, 2, stockKey, reservationKey, ttl.toString(), token);
 
-    if (result === -1) throw new Error('재고 없음');
-    if (result === -2) throw new Error('이미 예약 잡으셨습니다.');
+    if (result === -1) throw new ConflictException('재고 없음');
+    if (result === -2) throw new BadRequestException('이미 예약 잡으셨습니다.');
 
     await this.stockQueueService.addJob(userId, productId, stockKey, reservationKey);
 
@@ -54,7 +54,7 @@ export class PurchaseUseCase implements OnModuleInit {
     const reservationKey = `reservation:product:${productId}:user:${userId}`;
     
     const exists = await this.redis.exists(reservationKey);
-    if (!exists) throw new Error('예약 정보 없음');
+    if (!exists) throw new BadRequestException('예약 정보 없음');
 
     const savedToken = await this.redis.get(reservationKey);
     if (savedToken !== token) throw new BadRequestException('유효하지 않은 토큰입니다.');
