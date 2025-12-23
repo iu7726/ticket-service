@@ -40,15 +40,15 @@
 
 이 프로젝트는 **안정성(Stability)**과 **데이터 무결성(Integrity)**을 최우선으로 하여 기술 스택을 선정했습니다.
 
-| Category          | Technology | Version     | Key Decision Factor                                                           |
-| :---------------- | :--------- | :---------- | :---------------------------------------------------------------------------- |
-| **Framework**     | NestJS     | 10.x        | 모듈형 아키텍처 및 DI를 통한 관심사 분리(SoC) 및 유지보수성 확보              |
-| **Language**      | TypeScript | 5.x         | 정적 타입 시스템을 통한 런타임 에러 방지 및 생산성 향상                       |
-| **Database**      | MySQL      | **8.4 LTS** | InnoDB의 Locking 메커니즘(Gap Lock, Record Lock) 심층 활용 및 최신 LTS 안정성 |
-| **Cache & Lock**  | Redis      | **7.4**     | Lua Script를 통한 원자적 연산 수행 및 고성능 트래픽 제어                      |
-| **Queue**         | BullMQ     | 5.x         | **Reliable Delayed Job**을 통한 재고 복구(Stock Restoration) 시스템 구현      |
-| **Observability** | NestJS CLS | 4.x         | Trace ID 전파를 통한 Request-DB-Queue 전 구간 로그 추적 환경 구성             |
-| **Infra**         | Docker     | Compose     | 개발 환경의 완벽한 격리 및 IaC(Infrastructure as Code) 실현                   |
+| Category          | Technology | Version     | Key Decision Factor                                                      |
+| :---------------- | :--------- | :---------- | :----------------------------------------------------------------------- |
+| **Framework**     | NestJS     | 10.x        | 모듈형 아키텍처 및 DI를 통한 관심사 분리(SoC) 및 유지보수성 확보         |
+| **Language**      | TypeScript | 5.x         | 정적 타입 시스템을 통한 런타임 에러 방지 및 생산성 향상                  |
+| **Database**      | MySQL      | **8.4 LTS** | 트랜잭션(ACID)을 통한 최종 주문 데이터 정합성 보장 및 안정성             |
+| **Cache & Lock**  | Redis      | **7.4**     | Lua Script를 통한 원자적 연산 수행 및 고성능 트래픽 제어                 |
+| **Queue**         | BullMQ     | 5.x         | **Reliable Delayed Job**을 통한 재고 복구(Stock Restoration) 시스템 구현 |
+| **Observability** | NestJS CLS | 4.x         | Trace ID 전파를 통한 Request-DB-Queue 전 구간 로그 추적 환경 구성        |
+| **Infra**         | Docker     | Compose     | 개발 환경의 완벽한 격리 및 IaC(Infrastructure as Code) 실현              |
 
 ### 📊 System Architecture (Layered View)
 
