@@ -40,14 +40,15 @@
 
 이 프로젝트는 **안정성(Stability)**과 **데이터 무결성(Integrity)**을 최우선으로 하여 기술 스택을 선정했습니다.
 
-| Category         | Technology | Version     | Key Decision Factor                                                           |
-| :--------------- | :--------- | :---------- | :---------------------------------------------------------------------------- |
-| **Framework**    | NestJS     | 10.x        | 모듈형 아키텍처 및 DI를 통한 관심사 분리(SoC) 및 유지보수성 확보              |
-| **Language**     | TypeScript | 5.x         | 정적 타입 시스템을 통한 런타임 에러 방지 및 생산성 향상                       |
-| **Database**     | MySQL      | **8.4 LTS** | InnoDB의 Locking 메커니즘(Gap Lock, Record Lock) 심층 활용 및 최신 LTS 안정성 |
-| **Cache & Lock** | Redis      | **7.4**     | Lua Script를 통한 원자적 연산 수행 및 고성능 트래픽 제어                      |
-| **Queue**        | BullMQ     | 5.x         | **Reliable Delayed Job**을 통한 재고 복구(Stock Restoration) 시스템 구현      |
-| **Infra**        | Docker     | Compose     | 개발 환경의 완벽한 격리 및 IaC(Infrastructure as Code) 실현                   |
+| Category          | Technology | Version     | Key Decision Factor                                                           |
+| :---------------- | :--------- | :---------- | :---------------------------------------------------------------------------- |
+| **Framework**     | NestJS     | 10.x        | 모듈형 아키텍처 및 DI를 통한 관심사 분리(SoC) 및 유지보수성 확보              |
+| **Language**      | TypeScript | 5.x         | 정적 타입 시스템을 통한 런타임 에러 방지 및 생산성 향상                       |
+| **Database**      | MySQL      | **8.4 LTS** | InnoDB의 Locking 메커니즘(Gap Lock, Record Lock) 심층 활용 및 최신 LTS 안정성 |
+| **Cache & Lock**  | Redis      | **7.4**     | Lua Script를 통한 원자적 연산 수행 및 고성능 트래픽 제어                      |
+| **Queue**         | BullMQ     | 5.x         | **Reliable Delayed Job**을 통한 재고 복구(Stock Restoration) 시스템 구현      |
+| **Observability** | NestJS CLS | 4.x         | Trace ID 전파를 통한 Request-DB-Queue 전 구간 로그 추적 환경 구성             |
+| **Infra**         | Docker     | Compose     | 개발 환경의 완벽한 격리 및 IaC(Infrastructure as Code) 실현                   |
 
 ### 📊 System Architecture (Layered View)
 
@@ -117,6 +118,11 @@ Redis의 `eval` 명령어를 사용해 **재고 조회(GET)와 차감(DECR), 예
 
 Redis는 트래픽을 방어하는 1차 관문 역할을 하며, 실제 결제 확정(`confirm`) 시에는 **MySQL 트랜잭션**을 통해 주문 생성과 재고 차감을 동시에 수행하여 데이터의 최종 일관성을 보장합니다.
 
+### 4. End-to-End Observability
+
+시스템의 안정적인 운영과 디버깅을 위해 **요청의 전체 생명주기를 추적하는 가관측성(Observability)** 환경을 구축했습니다.
+`nestjs-cls`를 활용하여 고유한 **Trace ID**를 생성하고, 이를 HTTP 요청뿐만 아니라 **TypeORM 쿼리 로그**, **Redis 작업**, 그리고 **BullMQ 비동기 작업**까지 전파합니다. 덕분에 수만의 동시 요청 속에서도 특정 사용자의 트랜잭션 흐름을 정확히 파악하고 원인을 분석할 수 있습니다.
+
 ---
 
 ## 🚀 Getting Started
@@ -184,14 +190,15 @@ npm run start:dev
 
 ```Plaintext
 src/
-├── config/                  # 환경 변수 및 BullMQ 설정
+├── config/                  # 환경 변수 및 BullMQ, CLS 설정
 ├── redis/                   # Redis 모듈 및 Lua Scripts
 │   └── lua/                 # purchase.lua (Atomic Operation)
-├── domain/                  # 핵심 비즈니스 로메인
+├── domain/                  # 핵심 비즈니스 도메인
 │   ├── purchase/            # 상품 구매, 재고 선점, 예약 로직 (BullMQ Processor 포함)
 │   └── admin/               # 재고 강제 동기화 등 관리자 기능
 ├── service/                 # 엔티티 단위의 기본 서비스 (User, Product, Order)
 ├── common/                  # 공통 필터, 인터셉터, 엔티티
+│   └── logger/              # Custom & TypeORM Logger (Trace ID 연동)
 ├── app.module.ts            # Root Module
 └── main.ts                  # Entry Point
 ```
