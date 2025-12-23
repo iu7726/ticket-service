@@ -16,6 +16,9 @@ import { BullMQConfigService } from './config/bullMQ.config';
 import { QueueModule } from './service/queue/queue.module';
 import { HealthServiceModule } from './service/health/health.module';
 import { HealthModule } from './domain/health/health.module';
+import { ClsModule } from 'nestjs-cls';
+import { clsConfig } from './config/cls.config';
+import { CustomLoggerModule } from './common/logger/custom.logger.module';
 
 @Module({
   imports: [
@@ -33,6 +36,9 @@ import { HealthModule } from './domain/health/health.module';
     BullModule.forRootAsync({
       useClass: BullMQConfigService,
     }),
+
+    ClsModule.forRoot(clsConfig),
+    CustomLoggerModule,
 
     RedisModule,
 

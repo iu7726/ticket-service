@@ -2,6 +2,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class StockQueueService {
@@ -9,17 +10,20 @@ export class StockQueueService {
 
   constructor(
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
-    @InjectQueue('stock-queue') private stockQueue: Queue
+    @InjectQueue('stock-queue') private stockQueue: Queue,
+    private readonly cls: ClsService,
   ) {}
 
   async addJob(userId: number, productId: number, stockKey:string, reservationKey: string) {
     try {
+
       await this.stockQueue.add(
         'check-expiration', // 작업 이름
         { 
           userId, 
           productId, 
-          reservationKey 
+          reservationKey,
+          traceId: this.cls.getId(),
         }, // 데이터
         { 
           delay: 5 * 60 * 1000, // 5분 지연 (300000ms)

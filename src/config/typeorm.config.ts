@@ -2,10 +2,12 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
+import { TypeORMLogger } from 'src/common/logger/typeorm.logger';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class TypeOrmConfigService implements TypeOrmOptionsFactory {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService, private readonly cls: ClsService) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
     return {
@@ -19,6 +21,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
       autoLoadEntities: true, 
       synchronize: false, 
       logging: true,
+      logger: new TypeORMLogger(this.cls),
     };
   }
 }
