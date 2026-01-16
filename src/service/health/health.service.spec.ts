@@ -4,12 +4,11 @@ import { DataSource } from 'typeorm';
 
 describe('HealthService', () => {
   let service: HealthService;
-  let dataSource: any;
+  let dataSource: Partial<DataSource>;
   let redisClient: any;
+  let healthMonitorMock: any;
 
   beforeEach(async () => {
-    jest.useFakeTimers();
-
     dataSource = {
       query: jest.fn(),
     };
@@ -18,94 +17,93 @@ describe('HealthService', () => {
       ping: jest.fn(),
     };
 
+    healthMonitorMock = {
+      register: jest.fn(),
+      start: jest.fn(),
+      stop: jest.fn(),
+      getStatus: jest.fn().mockReturnValue({ status: true }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HealthService,
         { provide: DataSource, useValue: dataSource },
         { provide: 'REDIS_CLIENT', useValue: redisClient },
+        { provide: 'HEALTH_MONITOR', useValue: healthMonitorMock },
       ],
     }).compile();
 
     service = module.get<HealthService>(HealthService);
   });
 
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('checkHealth', () => {
-    it('should mark DB and Redis as alive when they respond correctly', async () => {
-      dataSource.query.mockResolvedValue([{ 1: 1 }]);
-      redisClient.ping.mockResolvedValue('PONG');
+  describe('onModuleInit', () => {
+    it('should register checks and start monitor', () => {
+      service.onModuleInit();
 
-      await service.checkHealth();
-
-      const status = service.getHealthStatus();
-      expect(status.isDbAlive).toBe(true);
-      expect(status.isRedisAlive).toBe(true);
-      expect(service.isHealthy()).toBe(true);
+      expect(healthMonitorMock.register).toHaveBeenCalledTimes(2);
+      expect(healthMonitorMock.register).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'db' }),
+      );
+      expect(healthMonitorMock.register).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'redis' }),
+      );
+      expect(healthMonitorMock.start).toHaveBeenCalledTimes(1);
     });
 
-    it('should mark DB as dead if query fails', async () => {
-      dataSource.query.mockRejectedValue(new Error('DB connection error'));
-      redisClient.ping.mockResolvedValue('PONG');
+    it('should configure db check correctly', async () => {
+      service.onModuleInit();
+      const dbCheckCall = healthMonitorMock.register.mock.calls.find(
+        (call: any[]) => call[0].name === 'db',
+      );
+      const dbCheckFn = dbCheckCall[0].check;
 
-      await service.checkHealth();
-
-      const status = service.getHealthStatus();
-      expect(status.isDbAlive).toBe(false);
-      expect(status.isRedisAlive).toBe(true);
-      expect(service.isHealthy()).toBe(false);
+      await dbCheckFn();
+      expect(dataSource.query).toHaveBeenCalledWith(
+        'SELECT /*+ MAX_EXECUTION_TIME(1000) */ 1',
+      );
     });
 
-    it('should mark Redis as dead if ping fails', async () => {
-      dataSource.query.mockResolvedValue([{ 1: 1 }]);
-      redisClient.ping.mockRejectedValue(new Error('Redis connection error'));
+    it('should configure redis check correctly', async () => {
+      service.onModuleInit();
+      const redisCheckCall = healthMonitorMock.register.mock.calls.find(
+        (call: any[]) => call[0].name === 'redis',
+      );
+      const redisCheckFn = redisCheckCall[0].check;
 
-      await service.checkHealth();
-
-      const status = service.getHealthStatus();
-      expect(status.isDbAlive).toBe(true);
-      expect(status.isRedisAlive).toBe(false);
-      expect(service.isHealthy()).toBe(false);
-    });
-
-    it('should handle timeout correctly', async () => {
-      //지연 응답
-      dataSource.query.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 2000)));
-      redisClient.ping.mockResolvedValue('PONG');
-      
-      const checkPromise = service.checkHealth();
-      
-      // 시간 이동
-      jest.advanceTimersByTime(1500);
-      
-      await checkPromise;
-
-      const status = service.getHealthStatus();
-      expect(status.isDbAlive).toBe(false);
-      expect(status.isRedisAlive).toBe(true);
+      await redisCheckFn();
+      expect(redisClient.ping).toHaveBeenCalled();
     });
   });
 
-  describe('Lifecycle & Interval', () => {
-    it('should start interval on module init', () => {
-      const spy = jest.spyOn(service, 'checkHealth');
-      service.onModuleInit();
-      
-      jest.advanceTimersByTime(3000);
-      expect(spy).toHaveBeenCalled();
-    });
-
-    it('should stop interval on module destroy', () => {
-      const spy = jest.spyOn(global, 'clearInterval');
-      service.onModuleInit();
+  describe('onModuleDestroy', () => {
+    it('should stop monitor', () => {
       service.onModuleDestroy();
-      expect(spy).toHaveBeenCalled();
+      expect(healthMonitorMock.stop).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getHealthStatus', () => {
+    it('should return status from monitor', () => {
+      const mockStatus = { status: true, details: {} };
+      healthMonitorMock.getStatus.mockReturnValue(mockStatus);
+
+      const result = service.getHealthStatus();
+      expect(healthMonitorMock.getStatus).toHaveBeenCalled();
+      expect(result).toBe(mockStatus);
+    });
+  });
+
+  describe('isHealthy', () => {
+    it('should return boolean status from monitor', () => {
+      healthMonitorMock.getStatus.mockReturnValue({ status: true });
+      expect(service.isHealthy()).toBe(true);
+
+      healthMonitorMock.getStatus.mockReturnValue({ status: false });
+      expect(service.isHealthy()).toBe(false);
     });
   });
 });

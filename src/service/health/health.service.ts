@@ -2,87 +2,43 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nest
 import { InjectDataSource } from '@nestjs/typeorm';
 import Redis from 'ioredis';
 import { DataSource } from 'typeorm';
+import { HealthMonitor } from "@mh.js/health-monitor";
 
 @Injectable()
 export class HealthService implements OnModuleInit, OnModuleDestroy {
-  private isDbAlive = false;
-  private isRedisAlive = false;
-  private intervalId: NodeJS.Timeout;
-
-  private lastCheckTime: number = 0;
-
-  private readonly CHECK_INTERVAL = 3000;
-  private readonly TIMEOUT_MS = 1000;
-
   constructor(
     private dataSource: DataSource,
     @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
+    @Inject('HEALTH_MONITOR') private readonly healthCheck: HealthMonitor,
   ) {}
 
   onModuleInit() {
-    this.intervalId = setInterval(() => {
-      this.checkHealth();
-    }, this.CHECK_INTERVAL);
+    this.healthCheck.register({
+      name: 'db',
+      check: () => this.dataSource.query('SELECT /*+ MAX_EXECUTION_TIME(1000) */ 1'),
+      timeout: 1000,
+    });
+    this.healthCheck.register({
+      name: 'redis',
+      check: () => this.redisClient.ping(),
+      timeout: 1000,
+    });
+    this.healthCheck.start();
   }
 
   onModuleDestroy() {
-    clearInterval(this.intervalId);
-  }
-
-  private rejectAfterTimeout(ms: number) {
-    return new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout')), ms)
-    );
-  }
-
-  private checkTime() {
-    const now = Date.now();
-    const isState = (now - this.lastCheckTime) <= (this.CHECK_INTERVAL * 3);
-
-    return isState;
-  }
-
-  async checkHealth() {
-    const checkDB = Promise.race([
-        this.dataSource.query('SELECT /*+ MAX_EXECUTION_TIME(1000) */ 1'),
-        this.rejectAfterTimeout(this.TIMEOUT_MS)
-      ]);
-
-    const checkRedis = Promise.race([
-      this.redisClient.ping(),
-      this.rejectAfterTimeout(this.TIMEOUT_MS)
-    ]);
-
-    const [dbResult, redisResult] = await Promise.allSettled([checkDB, checkRedis]);
-
-    if (dbResult.status === 'fulfilled') {
-      this.isDbAlive = true;
-    } else {
-      this.isDbAlive = false;
-    }
-
-    if (redisResult.status === 'fulfilled') {
-      this.isRedisAlive = true;
-    } else {
-      this.isRedisAlive = false;
-    }
-
-    this.lastCheckTime = Date.now();
+    this.healthCheck.stop();
   }
 
   getHealthStatus() {
-    const isState = this.checkTime();
+    const health = this.healthCheck.getStatus();
 
-    return {
-      isDbAlive: this.isDbAlive,
-      isRedisAlive: this.isRedisAlive,
-      isState,
-    };
+    return health;
   }
 
   isHealthy() {
-    const isState = this.checkTime();
+    const health = this.healthCheck.getStatus();
 
-    return isState && this.isDbAlive && this.isRedisAlive;
+    return health.status;
   }
 }
